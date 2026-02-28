@@ -2,7 +2,7 @@
 import asyncio
 import time
 
-from config import MAX_RETRIES, RETRY_DELAY, WORKER_COUNT
+from config import MAX_RETRIES, RETRY_DELAY, WORKER_COUNT, WORKER_IDLE_TIMEOUT
 from queue_manager import get_queue
 from storage import (
     get_message,
@@ -17,6 +17,7 @@ import metrics
 _worker_tasks: list[asyncio.Task] = []
 _worker_active_count = 0
 _worker_lock = asyncio.Lock()
+_worker_seq = 0
 
 
 async def _run_worker(worker_id: str) -> None:
@@ -28,13 +29,13 @@ async def _run_worker(worker_id: str) -> None:
 
     while True:
         try:
-            # Wait for next job (with timeout for graceful shutdown)
+            # Exit if idle long enough (on-demand worker lifecycle).
             message_id = await asyncio.wait_for(
                 queue.get(),
-                timeout=30.0,  # Check periodically for shutdown
+                timeout=float(WORKER_IDLE_TIMEOUT),
             )
         except asyncio.TimeoutError:
-            continue  # No job, loop again
+            break
 
         async with _worker_lock:
             _worker_active_count += 1
@@ -109,12 +110,43 @@ def get_active_worker_count() -> int:
     return _worker_active_count
 
 
-async def start_workers() -> None:
-    """Start worker tasks. Call from FastAPI lifespan."""
+def _cleanup_worker_tasks() -> None:
+    """Drop completed/cancelled worker tasks from pool."""
     global _worker_tasks
-    for i in range(WORKER_COUNT):
-        t = asyncio.create_task(_run_worker(f"worker-{i}"))
-        _worker_tasks.append(t)
+    _worker_tasks = [t for t in _worker_tasks if not t.done()]
+
+
+def get_worker_pool_size() -> int:
+    """Current number of live worker tasks (active + idle)."""
+    _cleanup_worker_tasks()
+    return len(_worker_tasks)
+
+
+async def ensure_workers_for_load() -> None:
+    """
+    Spawn workers on demand up to WORKER_COUNT.
+    Desired workers roughly follow queue pressure:
+    - at least 1 worker while queue has pending items
+    - at most WORKER_COUNT workers
+    """
+    global _worker_seq
+
+    _cleanup_worker_tasks()
+    queue = get_queue()
+    pending = queue.qsize()
+    if pending <= 0:
+        return
+
+    desired = min(WORKER_COUNT, max(1, pending))
+    while len(_worker_tasks) < desired:
+        worker_id = f"worker-{_worker_seq}"
+        _worker_seq += 1
+        _worker_tasks.append(asyncio.create_task(_run_worker(worker_id)))
+
+
+async def start_workers() -> None:
+    """No eager startup; workers are created on demand in submit flow."""
+    return
 
 
 async def stop_workers() -> None:

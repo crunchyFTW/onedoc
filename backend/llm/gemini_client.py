@@ -15,7 +15,7 @@ from config import (
 
 RATE_LIMIT_RETRIES = 1
 RATE_LIMIT_DEFAULT_WAIT = 35
-FALLBACK_MODEL = "gemini-flash-latest"
+FALLBACK_MODEL = "gemini-2.0-flash-lite"
 
 
 class GeminiLLMClient(BaseLLMClient):

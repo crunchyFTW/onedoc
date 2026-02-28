@@ -2,6 +2,21 @@
 
 A self-contained service with an HTTP API and React frontend for interacting with a Medical Expert AI Chat Agent. Users submit medical questions, which are processed asynchronously via an LLM, with logging and real-time statistics.
 
+## Quick Run (Same Commands)
+
+```bash
+# Terminal 1
+cd onedoc/backend
+source venv/bin/activate
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+# Terminal 2
+cd onedoc/frontend
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
 ## Tech Stack
 
 | Component | Technology |
@@ -40,11 +55,19 @@ cd ..          # back to project root
 touch .env
 ```
 
-Edit `.env` and set your Gemini key:
+Edit `.env` and set your values:
 
 ```
+SERVER_PORT=8000
 LLM_PROVIDER=gemini
 LLM_MODEL=gemini-flash-latest
+LLM_TEMPERATURE=0.7
+LLM_MAX_TOKENS=1024
+RETRY_DELAY=2
+MAX_RETRIES=3
+WORKER_IDLE_TIMEOUT=30
+WORKER_COUNT=4
+LOG_FILE_PATH=chat.log
 GEMINI_API_KEY=YOUR_KEY_HERE
 ```
 

@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import SERVER_PORT, WORKER_COUNT
+from config import SERVER_PORT
 from models import (
     ChatQuestionRequest,
     ChatSubmitResponse,
@@ -14,7 +14,13 @@ from models import (
 )
 from storage import create_message, get_message
 from queue_manager import get_queue, queue_size
-from worker import start_workers, stop_workers, get_active_worker_count
+from worker import (
+    start_workers,
+    stop_workers,
+    get_active_worker_count,
+    get_worker_pool_size,
+    ensure_workers_for_load,
+)
 import metrics
 
 
@@ -47,6 +53,7 @@ async def submit_chat(request: ChatQuestionRequest):
     create_message(request.question, message_id)
     queue = get_queue()
     await queue.put(message_id)
+    await ensure_workers_for_load()
     return ChatSubmitResponse(messageId=message_id)
 
 
@@ -68,7 +75,8 @@ async def get_chat_status(message_id: str):
 async def get_statistics():
     """Get system metrics."""
     active = get_active_worker_count()
-    idle = WORKER_COUNT - active
+    pool_size = get_worker_pool_size()
+    idle = max(0, pool_size - active)
     stats = metrics.get_stats(
         current_queue_length=queue_size(),
         active_workers=active,
@@ -80,4 +88,5 @@ async def get_statistics():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=SERVER_PORT, reload=True)
+    # Keep reload off by default because in-memory storage is cleared on restart.
+    uvicorn.run("main:app", host="0.0.0.0", port=SERVER_PORT, reload=False)
