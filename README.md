@@ -37,7 +37,7 @@ Create a `.env` file in the **project root** (`onedoc/`, not inside `backend/`):
 
 ```bash
 cd ..          # back to project root
-cp .env.example .env
+touch .env
 ```
 
 Edit `.env` and set your Gemini key:
@@ -190,7 +190,6 @@ onedoc/
 │   │   ├── pages/
 │   │   └── api.js
 │   └── package.json
-├── .env.example
 ├── .gitignore
 └── README.md
 ```
