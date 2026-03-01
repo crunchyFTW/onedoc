@@ -35,6 +35,4 @@ WORKER_COUNT = min(
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "chat.log")
 
 # API Keys (loaded when provider needs them, stripped of whitespace)
-OPENAI_API_KEY = (os.getenv("OPENAI_API_KEY") or "").strip()
-ANTHROPIC_API_KEY = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
 GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()

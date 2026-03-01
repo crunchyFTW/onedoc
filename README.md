@@ -23,7 +23,7 @@ Open `http://localhost:5173`.
 |-----------|------------|
 | Backend | FastAPI (Python), asyncio workers |
 | Frontend | React (Vite) + React Router |
-| LLM | OpenAI / Anthropic / Gemini / Mock (configurable) |
+| LLM | Gemini / Mock (configurable) |
 | Storage | In-memory (no database required) |
 
 ---
@@ -176,13 +176,11 @@ These are backend URLs (served by FastAPI on port 8000). Frontend routes like `/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `SERVER_PORT` | HTTP server port | `8000` |
-| `LLM_PROVIDER` | `openai` / `anthropic` / `gemini` / `mock` | `mock` |
+| `LLM_PROVIDER` | `gemini` / `mock` | `mock` |
 | `LLM_MODEL` | Model name (e.g. `gemini-flash-latest`) | `gemini-flash-latest` |
 | `LLM_TEMPERATURE` | Temperature (0–1) | `0.7` |
 | `LLM_MAX_TOKENS` | Max tokens per request | `1024` |
 | `GEMINI_API_KEY` | Google Gemini API key (required for `gemini`) | — |
-| `OPENAI_API_KEY` | OpenAI key (for `openai`) | — |
-| `ANTHROPIC_API_KEY` | Anthropic key (for `anthropic`) | — |
 | `RETRY_DELAY` | Seconds between retries | `2` |
 | `MAX_RETRIES` | Max retry attempts | `3` |
 | `WORKER_IDLE_TIMEOUT` | Worker idle timeout (seconds) | `30` |
@@ -202,7 +200,7 @@ onedoc/
 │   ├── storage.py
 │   ├── queue_manager.py
 │   ├── worker.py
-│   ├── llm/              # OpenAI, Anthropic, Gemini, mock
+│   ├── llm/              # Gemini, mock
 │   ├── logging_utils.py
 │   ├── metrics.py
 │   ├── tests/
