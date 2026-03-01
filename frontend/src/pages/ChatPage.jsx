@@ -9,9 +9,11 @@ export default function ChatPage() {
   const [error, setError] = useState(null);
 
   const pollUntilDone = async (id) => {
-    // Keep retrieval attempts small and predictable for assignment simplicity.
-    const maxAttempts = 3;
-    const pollIntervalMs = 5000;
+    const maxAttempts = 7;
+    const timeoutMs = 20000;
+    const pollIntervalMs = 3000;
+    const startMs = Date.now();
+
     for (let i = 0; i < maxAttempts; i++) {
       try {
         const data = await getChatStatus(id);
@@ -22,9 +24,12 @@ export default function ChatPage() {
         setStatus(null);
         return;
       }
-      await new Promise((r) => setTimeout(r, pollIntervalMs));
+      const elapsedMs = Date.now() - startMs;
+      const remainingMs = timeoutMs - elapsedMs;
+      if (remainingMs <= 0) break;
+      await new Promise((r) => setTimeout(r, Math.min(pollIntervalMs, remainingMs)));
     }
-    setError('Response timed out after 3 retrieval attempts');
+    setError('Response timed out after 20 seconds (7 retrieval attempts)');
     setStatus(null);
   };
 
