@@ -76,6 +76,9 @@ async def _run_worker(worker_id: str) -> None:
                         question=question,
                         response_or_error=answer,
                         is_error=False,
+                        retries=retries,
+                        tokens_used=tokens,
+                        processing_time_ms=elapsed_ms,
                     )
                     break
                 except Exception as e:
@@ -99,6 +102,9 @@ async def _run_worker(worker_id: str) -> None:
                             question=question,
                             response_or_error=f"LLM request failed after retries: {last_error}",
                             is_error=True,
+                            retries=retries,
+                            tokens_used=0,
+                            processing_time_ms=(time.perf_counter() - start_time) * 1000,
                         )
         finally:
             async with _worker_lock:

@@ -1,4 +1,6 @@
 """Statistics and metrics for GET /statistics."""
+import re
+from pathlib import Path
 from typing import List
 
 # Counters (single event loop - no atomics needed for asyncio)
@@ -41,6 +43,68 @@ def add_tokens(tokens: int) -> None:
 
 def add_processing_time_ms(ms: float) -> None:
     _processing_times_ms.append(ms)
+
+
+def reset_stats() -> None:
+    """Reset all metric counters (used at app startup before bootstrap)."""
+    global _messages_processed, _messages_succeeded, _messages_failed
+    global _total_retries, _total_tokens, _processing_times_ms
+    _messages_processed = 0
+    _messages_succeeded = 0
+    _messages_failed = 0
+    _total_retries = 0
+    _total_tokens = 0
+    _processing_times_ms = []
+
+
+def _extract_int(line: str, key: str) -> int:
+    match = re.search(rf"{key}=(-?\d+)", line)
+    return int(match.group(1)) if match else 0
+
+
+def _extract_float(line: str, key: str) -> float:
+    match = re.search(rf"{key}=(-?\d+(?:\.\d+)?)", line)
+    return float(match.group(1)) if match else 0.0
+
+
+def bootstrap_from_log(log_file_path: str) -> None:
+    """
+    Rebuild metrics from chat.log on startup.
+    Supports both old lines (response=/error=) and new lines with status/tokens/time.
+    """
+    reset_stats()
+
+    log_path = Path(log_file_path)
+    if not log_path.exists():
+        return
+
+    with log_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            if " | " not in line:
+                continue
+
+            is_completed = (" status=completed " in line) or (" | response=" in line)
+            is_failed = (" status=failed " in line) or (" | error=" in line)
+
+            if not is_completed and not is_failed:
+                continue
+
+            increment_processed()
+
+            retries = max(0, _extract_int(line, "retries"))
+            if retries:
+                add_retries(retries)
+
+            if is_completed:
+                increment_succeeded()
+                tokens = max(0, _extract_int(line, "tokens"))
+                if tokens:
+                    add_tokens(tokens)
+                processing_ms = _extract_float(line, "processingMs")
+                if processing_ms > 0:
+                    add_processing_time_ms(processing_ms)
+            else:
+                increment_failed()
 
 
 def set_worker_counts(active: int, idle: int) -> None:

@@ -33,7 +33,7 @@ Open `http://localhost:5173`.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/onedoc.git
+git clone https://github.com/cruncyFTW/onedoc.git
 cd onedoc
 ```
 
@@ -167,6 +167,8 @@ Tests use the mock LLM provider (no API key needed). All 6 tests should pass.
 | `GET` | `/statistics` | System metrics (processed, failed, queue length, workers, etc.). |
 | `GET` | `/docs` | Swagger UI (when backend is running). |
 
+These are backend URLs (served by FastAPI on port 8000). Frontend routes like `/` and `/stats` are only UI pages and do not replace backend API endpoints.
+
 ---
 
 ## Environment Variables
@@ -229,6 +231,14 @@ onedoc/
 | 429 rate limit | Free tier limits. Wait a minute or use `LLM_PROVIDER=mock` for development. |
 | Port in use | Change `SERVER_PORT` in `.env` or use `--port 8001`. |
 | Message not found (404) | Backend restart clears in-memory store. Avoid `--reload` during testing. |
+
+---
+
+## Persistence (Bonus)
+
+- Message records are in-memory and reset on restart.
+- `chat.log` is persistent and keeps completed/failed interactions.
+- On backend startup, `/statistics` is bootstrapped from `chat.log` so historical processed/succeeded/failed/retries/tokens/time can be restored.
 
 ---
 

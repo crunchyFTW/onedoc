@@ -9,8 +9,9 @@ export default function ChatPage() {
   const [error, setError] = useState(null);
 
   const pollUntilDone = async (id) => {
-    const maxAttempts = 90; // ~7.5 min max at 5s intervals
-    const pollIntervalMs = 5000; // Poll every 5s (backend may take 30-45s on rate limits)
+    // Keep retrieval attempts small and predictable for assignment simplicity.
+    const maxAttempts = 3;
+    const pollIntervalMs = 5000;
     for (let i = 0; i < maxAttempts; i++) {
       try {
         const data = await getChatStatus(id);
@@ -23,7 +24,7 @@ export default function ChatPage() {
       }
       await new Promise((r) => setTimeout(r, pollIntervalMs));
     }
-    setError('Response timed out');
+    setError('Response timed out after 3 retrieval attempts');
     setStatus(null);
   };
 

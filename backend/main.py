@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import SERVER_PORT
+from config import SERVER_PORT, LOG_FILE_PATH
 from models import (
     ChatQuestionRequest,
     ChatSubmitResponse,
@@ -27,6 +27,7 @@ import metrics
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Start workers on startup, stop on shutdown."""
+    metrics.bootstrap_from_log(LOG_FILE_PATH)
     await start_workers()
     yield
     await stop_workers()
